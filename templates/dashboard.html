@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Green Route{% endblock %}
+
+{% block body %}
+<div class="app-page">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <!-- PLACEHOLDER: Replace with logo image if desired -->
+            <!-- <img src="YOUR_LOGO_URL_HERE" alt="Green Route" class="nav-logo"> -->
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">GREEN ROUTE</a>
+        </div>
+        <div class="nav-right">
+            <a href="{{ url_for('view_stops') }}" class="btn btn-outline btn-sm">View All Stops</a>
+            <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <p class="greeting">Hello, <strong>{{ username }}</strong></p>
+        <h1 class="page-title">Add New Bus Stop</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast toast-{{ category }}" id="flashToast">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card form-card">
+            <form id="stopForm" method="POST" action="{{ url_for('dashboard') }}" enctype="multipart/form-data" novalidate>
+                <!-- Your Name -->
+                <div class="form-group">
+                    <label for="submitted_by">Your Name</label>
+                    <input
+                        type="text"
+                        id="submitted_by"
+                        name="submitted_by"
+                        placeholder="Enter your full name"
+                        value="{{ username }}"
+                        required
+                    >
+                    <span class="field-error" id="error-submitted_by"></span>
+                </div>
+
+                <!-- Bus Stop Name -->
+                <div class="form-group">
+                    <label for="stop_name">Bus Stop Name</label>
+                    <input
+                        type="text"
+                        id="stop_name"
+                        name="stop_name"
+                        placeholder="e.g. Atomic Junction Stop"
+                        required
+                    >
+                    <span class="field-error" id="error-stop_name"></span>
+                </div>
+
+                <!-- Area -->
+                <div class="form-group">
+                    <label for="area">Area / Neighbourhood</label>
+                    <input
+                        type="text"
+                        id="area"
+                        name="area"
+                        placeholder="e.g. Atomic Junction"
+                        required
+                    >
+                    <span class="field-error" id="error-area"></span>
+                </div>
+
+                <!-- City -->
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <select id="city" name="city" required>
+                        <option value="" disabled selected>Select a city</option>
+                        <option value="Accra">Accra</option>
+                        <option value="Kumasi">Kumasi</option>
+                        <option value="Takoradi">Takoradi</option>
+                        <option value="Tamale">Tamale</option>
+                        <option value="Cape Coast">Cape Coast</option>
+                        <option value="Sunyani">Sunyani</option>
+                        <option value="Koforidua">Koforidua</option>
+                        <option value="Ho">Ho</option>
+                        <option value="Bolgatanga">Bolgatanga</option>
+                        <option value="Wa">Wa</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <span class="field-error" id="error-city"></span>
+                </div>
+
+                <!-- Nearby Landmarks (optional) -->
+                <div class="form-group">
+                    <label for="nearby_landmarks">Nearby Landmarks (optional)</label>
+                    <input
+                        type="text"
+                        id="nearby_landmarks"
+                        name="nearby_landmarks"
+                        placeholder="e.g. Atomic Energy Commission, Legon Campus"
+                    >
+                    <p class="helper-text">Separate multiple landmarks with a comma</p>
+                </div>
+
+                <!-- GPS Location -->
+                <div class="form-group">
+                    <label>GPS Location</label>
+                    <div class="gps-row">
+                        <div class="gps-field">
+                            <input
+                                type="text"
+                                id="latitude"
+                                name="latitude"
+                                placeholder="Will be captured automatically"
+                                readonly
+                                required
+                            >
+                        </div>
+                        <div class="gps-field">
+                            <input
+                                type="text"
+                                id="longitude"
+                                name="longitude"
+                                placeholder="Will be captured automatically"
+                                readonly
+                                required
+                            >
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-full gps-btn" id="captureLocationBtn">
+                        📍 Capture My Location
+                    </button>
+                    <span class="field-error" id="error-gps"></span>
+                </div>
+
+                <!-- Photo -->
+                <div class="form-group">
+                    <label>Photo of the Bus Stop</label>
+
+                    <!-- Choice buttons -->
+                    <div class="photo-options" id="photoOptions">
+                        <button type="button" class="btn btn-outline btn-full photo-option-btn" id="uploadPhotoBtn">
+                            📁 Upload Photo
+                        </button>
+                        <button type="button" class="btn btn-primary btn-full photo-option-btn" id="liveCaptureBtn">
+                            📷 Capture Live
+                        </button>
+                    </div>
+
+                    <!-- Hidden file input (used for both upload and live capture) -->
+                    <input
+                        type="file"
+                        id="photo"
+                        name="photo"
+                        accept="image/*"
+                        class="hidden"
+                    >
+
+                    <!-- Live camera panel (hidden until "Capture Live" is pressed) -->
+                    <div id="cameraPanel" class="camera-panel hidden">
+                        <video id="cameraVideo" autoplay playsinline muted></video>
+                        <canvas id="cameraCanvas" class="hidden"></canvas>
+                        <div class="camera-controls">
+                            <button type="button" class="btn btn-primary" id="takePhotoBtn">Take Photo</button>
+                            <button type="button" class="btn btn-outline" id="switchCameraBtn">Switch Camera</button>
+                            <button type="button" class="btn btn-outline" id="cancelCameraBtn">Cancel</button>
+                        </div>
+                    </div>
+
+                    <span class="field-error" id="error-photo"></span>
+
+                    <!-- Preview after upload or capture -->
+                    <div id="photoPreview" class="photo-preview hidden">
+                        <img id="previewImg" src="" alt="Photo preview">
+                        <button type="button" class="btn btn-outline btn-sm retake-btn" id="retakePhotoBtn">
+                            Retake / Change Photo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary btn-full btn-submit" id="submitBtn">
+                    <span class="btn-text">Submit Bus Stop</span>
+                    <span class="btn-spinner hidden"></span>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Sticky bottom bar -->
+    <div class="sticky-bar">
+        <p>You've added <strong>{{ stops_today }}</strong> stop{{ 's' if stops_today != 1 else '' }} today</p>
+    </div>
+</div>
+{% endblock %}

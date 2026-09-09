@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}All Bus Stops — Green Route{% endblock %}
+
+{% block body %}
+<div class="app-page">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <!-- PLACEHOLDER: Replace with logo image if desired -->
+            <!-- <img src="YOUR_LOGO_URL_HERE" alt="Green Route" class="nav-logo"> -->
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">GREEN ROUTE</a>
+        </div>
+        <div class="nav-right">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-sm">Add Stop</a>
+            <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <h1 class="page-title">All Bus Stops</h1>
+
+        <!-- Analytics Cards -->
+        <div class="analytics-row">
+            <div class="analytics-card">
+                <p class="analytics-label">Total Stops</p>
+                <p class="analytics-value analytics-value-green">{{ total_stops }}</p>
+            </div>
+            <div class="analytics-card">
+                <p class="analytics-label">Added Today</p>
+                <p class="analytics-value">{{ stops_today }}</p>
+            </div>
+            <div class="analytics-card">
+                <p class="analytics-label">This Week</p>
+                <p class="analytics-value">{{ stops_this_week }}</p>
+            </div>
+            <div class="analytics-card">
+                <p class="analytics-label">Top Contributor</p>
+                <p class="analytics-value analytics-value-sm">{{ top_contributor }}</p>
+                <p class="analytics-sub">{{ top_contributor_count }} stops</p>
+            </div>
+            <div class="analytics-card analytics-card-wide">
+                <p class="analytics-label">Stops per City</p>
+                <div class="city-list">
+                    {% if stops_by_city %}
+                        {% for city, count in stops_by_city.items()|sort %}
+                            <div class="city-item">
+                                <span>{{ city }}</span>
+                                <span class="city-count">{{ count }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="muted">No data yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar">
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Search by name, area, or city..."
+                autocomplete="off"
+            >
+        </div>
+
+        <!-- Stops List -->
+        <div id="stopsList" class="stops-list">
+            {% if stops %}
+                {% for stop in stops %}
+                    <div class="stop-card"
+                         data-name="{{ stop.stop_name|lower }}"
+                         data-area="{{ stop.area|lower }}"
+                         data-city="{{ stop.city|lower }}"
+                         data-index="{{ loop.index0 }}">
+                        <div class="stop-photo" data-src="{{ stop.photo_url }}">
+                            <img src="{{ stop.photo_url }}" alt="{{ stop.stop_name }}" loading="lazy">
+                        </div>
+                        <div class="stop-info">
+                            <h3 class="stop-name">{{ stop.stop_name }}</h3>
+                            <p class="stop-location">{{ stop.area }}, {{ stop.city }}</p>
+                            {% if stop.nearby_landmarks %}
+                                <p class="stop-landmarks">{{ stop.nearby_landmarks }}</p>
+                            {% endif %}
+                            <p class="stop-coords">{{ '%.8f'|format(stop.latitude) }}, {{ '%.8f'|format(stop.longitude) }}</p>
+                            <p class="stop-meta">
+                                Added by {{ stop.submitted_by }} • {{ stop.created_at.strftime('%d %b %Y, %H:%M') }}
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">🚏</div>
+                    <p>No bus stops added yet. Go add the first one!</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Add First Stop</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div id="searchEmpty" class="empty-state hidden">
+            <p class="muted">No stops match your search</p>
+        </div>
+
+        <div id="loadMoreWrap" class="load-more-wrap hidden">
+            <button type="button" class="btn btn-outline" id="loadMoreBtn">Load More</button>
+        </div>
+    </main>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox hidden">
+    <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+    <img id="lightboxImg" src="" alt="Full size photo">
+</div>
+{% endblock %}
