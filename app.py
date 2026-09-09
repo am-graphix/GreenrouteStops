@@ -15,6 +15,9 @@ app.config.from_object(Config)
 
 # Initialize extensions
 db.init_app(app)
+# Create tables if they don't exist (Neon / first deploy)
+with app.app_context():
+    db.create_all()
 
 # Configure Cloudinary
 cloudinary.config(
