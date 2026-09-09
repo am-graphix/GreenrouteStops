@@ -9,6 +9,9 @@ import cloudinary
 import cloudinary.uploader
 from config import Config
 from models import db, BusStop
+import csv
+import io
+from flask import Response
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -164,6 +167,50 @@ def view_stops():
         top_contributor_count=top_contributor_count
     )
 
+@app.route('/stops/<int:stop_id>/delete', methods=['POST'])
+@login_required
+def delete_stop(stop_id):
+    stop = BusStop.query.get_or_404(stop_id)
+    db.session.delete(stop)
+    db.session.commit()
+    flash('Bus stop deleted.', 'success')
+    return redirect(url_for('view_stops'))
+
+
+
+@app.route('/stops/export')
+@login_required
+def export_stops():
+    stops = BusStop.query.order_by(BusStop.created_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'id', 'stop_name', 'area', 'city', 'nearby_landmarks',
+        'latitude', 'longitude', 'photo_url', 'submitted_by', 'created_at'
+    ])
+    for s in stops:
+        writer.writerow([
+            s.id,
+            s.stop_name,
+            s.area,
+            s.city,
+            s.nearby_landmarks or '',
+            f'{s.latitude:.8f}',
+            f'{s.longitude:.8f}',
+            s.photo_url,
+            s.submitted_by,
+            s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else ''
+        ])
+
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename=green_route_bus_stops.csv'
+        }
+    )
 
 @app.cli.command('init-db')
 def init_db():
